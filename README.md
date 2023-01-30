@@ -1,70 +1,55 @@
-# Getting Started with Create React App
+# 목차
+[React에서 사용자 입력 처리하기](#react에서-사용자-입력-처리하기)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+<br/>
 
-## Available Scripts
+# React에서 사용자 입력 처리하기
+```js
+import { useState } from "react";
 
-In the project directory, you can run:
+// input, textarea, select 모두 name를 통해 서로를 구분할 수 있다.
+const DiaryEditor = () => {
+  const [state, setState] = useState({author:"", content:"", emotion: 1})
 
-### `npm start`
+  // input, textarea, select 상태 관리
+  const handleChangeState = (e) => {
+    // 스프레드 연산자를 뒤에 표기하게 되면 state의 저장된 기본값들이 재할당 되므로 앞에 표기해야 한다.
+    setState({...state, [e.target.name]: e.target.value})
+  }
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+  // 가장 최신의 state값들을 출력하게 된다.
+  const handleSubmit = () => {
+    console.log(state);
+    alert('저장 성공');
+  }
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  return (
+    <div className="DiaryEditor">
+      <h2>오늘의 일기</h2>
+      {/* 바뀌는 값만 e.target.value를 통해 변경하고 나머지는 state의 저장된 값으로 지정한다. */}
+      <div><input value={state.author} onChange={e => setState({author: e.target.value, content: state.content})} /></div>
+      <div><textarea value={state.content} onChange={e => setState({content: e.target.value, author: state.author})} /></div>
 
-### `npm test`
+      {/* state가 많아질 경우 스프레드 연산자를 통해 해결할 수 있다. */}
+      <div><input value={state.author} onChange={e => setState({...state, author: e.target.value})} /></div>
+      <div><textarea value={state.content} onChange={e => setState({...state, content: e.target.value})} /></div>
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+      {/* input, textarea, select를 한 함수에서 관리할 수 있다. */}
+      <div><input name="author" value={state.author} onChange={handleChangeState} /></div>
+      <div><textarea name="content" value={state.content} onChange={handleChangeState} /></div>
+      <div>
+        <select name="emotion" value={state.emotion} onChange={handleChangeState}>
+          <option value={1}>1</option>
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+          <option value={4}>4</option>
+          <option value={5}>5</option>
+        </select>
+      </div>
+      <div><button onClick={handleSubmit}>일기 저장하기</button></div>
+    </div>
+  )
+}
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+export default DiaryEditor;
+```
