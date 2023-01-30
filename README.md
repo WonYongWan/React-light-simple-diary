@@ -1,5 +1,6 @@
 # 목차
-[React에서 사용자 입력 처리하기](#react에서-사용자-입력-처리하기)
+[React에서 사용자 입력 처리하기](#react에서-사용자-입력-처리하기)<br/>
+[React에서 DOM 조작하기 - useRef](#react에서-dom-조작하기---useref)
 
 <br/>
 
@@ -52,4 +53,30 @@ const DiaryEditor = () => {
 }
 
 export default DiaryEditor;
+```
+
+# React에서 DOM 조작하기 - useRef
+```js
+// useRef를 사용하기 위해 아래와 같이 import해준다. useRef는 DOM 요소에 접근할 수 있는 기능을 한다.
+import React, { useRef, useState } from "react";
+
+const DiaryEditor = () => {
+  const handleSubmit = () => {
+    if(state.author.length < 1) {
+      // 래퍼런스 객체 DOM요소를 선택하는 useRef라는 기능으로 생성한 아래와 같은 래퍼런스 객체는 현재 가리키는 값을 current 프로퍼티로 불러와 사용할 수 있다. = input name="author"
+      authorInput.current.focus();
+      return;
+    }
+
+    if(state.content.length < 5) {
+      contentInput.current.focus();
+      return;
+    }
+
+    alert('저장 성공');
+  }
+
+  // 아래와 같이 ref로 표기해주면 authorInput 레퍼런스 객체를 통해서 input태그에 접근할 수 있게 된다.
+  return <div><input name="author" ref={authorInput} value={state.author} onChange={handleChangeState} /></div>
+}
 ```
