@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 
-const DiaryEditor = () => {
+const DiaryEditor = ({onCreate}) => {
   const [state, setState] = useState({author:"", content:"", emotion: 1});
 
   const authorInput = useRef();
@@ -21,7 +21,13 @@ const DiaryEditor = () => {
       return;
     }
 
+    onCreate(state.author, state.content, state.emotion);
     alert('저장 성공');
+    setState({
+      author: "",
+      content: "",
+      emotion: 1
+    });
   }
 
   return (
@@ -41,7 +47,7 @@ const DiaryEditor = () => {
       </div>
       <div><button onClick={handleSubmit}>일기 저장하기</button></div>
     </div>
-  )
+  );
 }
 
 export default DiaryEditor;
