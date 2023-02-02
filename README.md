@@ -4,6 +4,7 @@
 [React에서 배열 사용하기 1 - 리스트 렌더링 (조회)](#react에서-배열-사용하기-1---리스트-렌더링-조회)<br/>
 [React에서 배열 사용하기 2 - 데이터 추가하기](#react에서-배열-사용하기-2---데이터-추가하기)<br/>
 [React에서 배열 사용하기 3 - 데이터 삭제하기](#react에서-배열-사용하기-3---데이터-삭제하기)<br/>
+[React에서 배열 사용하기 4 - 데이터 수정하기](#react에서-배열-사용하기-4---데이터-수정하기)<br/>
 
 <br/>
 
@@ -321,6 +322,95 @@ const DiaryItem = ({onDelete, author, content, created_date, emotion, id}) => {
       <div className="content">{content}</div>
       {/* onDelete에 클릭한 요소의 id 인수로 전달 */}
       <button onClick={() => {if(window.confirm(`${id}번째 일기를 정말 삭제 하시겠습니까?`)) onDelete(id);}}>삭제하기</button>
+    </div>
+  );
+}
+
+export default DiaryItem;
+```
+
+# React에서 배열 사용하기 4 - 데이터 수정하기
+
+```js
+function App() {
+
+  const [data, setData] = useState([]);
+
+  // onEdit의 경우 data의 id값이 targetId와 같을 경우에만 해당 id값을 아이템 ...it을 전개하고 content를 newContent로 저장한다.
+  const onEdit = (targetId, newContent) => {
+    setData(data.map(it => it.id === targetId ? {...it, content: newContent} : it));
+  }
+
+  return (
+    <div className="App">
+      <DiaryEditor onCreate={onCreate}/>
+      {/* 최종적으로 DiaryItem에 전달될 onEdit이다. */}
+      <DiaryList onEdit={onEdit} onRemove={onRemove} dairyList={data}/>
+    </div>
+  );
+}
+
+export default App;
+```
+
+```js
+import { useRef, useState } from "react";
+
+const DiaryItem = ({onEdit, onRemove, author, content, created_date, emotion, id}) => {
+
+  const [isEdit, setIsEdit] = useState(false);
+  // isEdit값이 false면 true로 true면 false로 변경한다. // 수정하기
+  const toggleIsEdit = () => setIsEdit(!isEdit);
+
+  const [localContent, setLocalContent] = useState(content);
+  const localContentInput = useRef();
+
+  // isEdit를 false로 변경하고 localContent를 content로 변경한다. // 수정 취소
+  const handleQuitEdit = () => {
+    setIsEdit(false);
+    setLocalContent(content);
+  }
+
+  // localContent의 길이가 5미만일 경우 해당 돔에 focus를 하고 return한다.
+  const handleEdit = () => {
+    if(localContent.length < 5) {
+      localContentInput.current.focus();
+      return;
+    }
+
+    // 수정을 허락할 경우 onEdit의 인수로 해당 id와 localContent값을 전달한다.
+    if(window.confirm(`${id}번째 일기를 수정 하시겠습니까?`)) {
+      onEdit(id, localContent);
+      // isEdit값이 false면 true로 true면 false로 변경한다. // 수정하기
+      toggleIsEdit();
+    };
+  }
+
+  return (
+    <div className="DiaryItem">
+      <div className="info">
+        <span>작성자 : {author} | 감정 점수 : {emotion}</span>
+        <br/>
+        <span className="date">{new Date(created_date).toLocaleString()}</span>
+      </div>
+      <div className="content">
+        {/* isEdit의 상태에 따른 노출되는 태그 변경 */}
+        {isEdit ? 
+        <><textarea ref={localContentInput} value={localContent} onChange={e => setLocalContent(e.target.value)}/></> : 
+        <>{content}</>
+        }
+      </div>
+      {/* isEdit의 상태에 따른 노출되는 태그 변경 */}
+      {isEdit ? 
+      <>
+        <button onClick={handleQuitEdit}>수정 취소</button>
+        <button onClick={handleEdit}>수정 완료</button>
+      </> :
+      <>
+        <button onClick={handleRemove}>삭제하기</button>
+        <button onClick={toggleIsEdit}>수정하기</button>
+      </>
+      }
     </div>
   );
 }
