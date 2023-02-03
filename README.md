@@ -5,6 +5,7 @@
 [React에서 배열 사용하기 2 - 데이터 추가하기](#react에서-배열-사용하기-2---데이터-추가하기)<br/>
 [React에서 배열 사용하기 3 - 데이터 삭제하기](#react에서-배열-사용하기-3---데이터-삭제하기)<br/>
 [React에서 배열 사용하기 4 - 데이터 수정하기](#react에서-배열-사용하기-4---데이터-수정하기)<br/>
+[React Lifecycle 제어하기 - useEffect](#react-lifecycle-제어하기---useeffect)<br/>
 
 <br/>
 
@@ -416,4 +417,119 @@ const DiaryItem = ({onEdit, onRemove, author, content, created_date, emotion, id
 }
 
 export default DiaryItem;
+```
+
+# React Lifecycle 제어하기 - useEffect
+
+React 컴포넌트의 생애 주기 (생명 주기)
+
+탄생(화면에 나타나는 것 Mount) -> 변화(업데이트(리렌더) Update) -> 죽음(화면에서 사라짐 UnMount)
+
+React는 기본적으로 Lifecycle마다 실행할 수 있는 메서드를 가지고 있다.
+
+- ComponentDidMount (Mount)
+- ComponentDidUpdate (Update)
+- ComponentWillUnmount (UnMount)
+
+다만 위의 메서드들은 class형 컴포넌트에서만 사용할 수 있다.
+
+그리고 함수형 컴포넌트는 근본적으로 Lifecycle를 제어하는 메서드들 말고도 상태를 관리하는 state도 사용할 수 없다. (class컴포넌트만 가능)
+
+하지만 지금까지 useState를 통해 상태를 관리해 왔다. 이는
+
+앞에 use키워드를 붙이면 원래 class형 컴포넌트가 근본적으로 가지고 있는 기능을 함수형 컴포넌트에서 낚아채서 사용할 수 있는데 이를 React Hooks라고 한다.
+
+State, Effect, Ref => 함수형 컴포넌트에서 사용 X
+
+useState, useEffect, useRef => 함수형 컴포넌트에서 사용 O
+
+### 왜 React Hooks가 나왔는가?
+
+React Hooks는 2019.06 정식 출시된 기능이다.
+
+class형 컴포넌트의 길어지는 코드 길이 문제 + 중복 코드, 가독성 문제 등등을 해결하기 위해 등장함
+
+```js 
+import React, { useEffect } from "react";
+
+// 함수형 컴포넌트에서 Lifecycle를 제어하기 위해서는 useEffect라는 React Hooks를 사용해야 한다.
+useEffect(() => {
+  // todo... // Callback 함수
+}, []) // [] => Dependency Array(의존성 배열) 이 배열 내에 들어있는 값이 변화하면 콜백 함수가 수행된다.
+```
+
+```js
+import React, { useEffect, useState } from "react";
+
+const Lifecycle = () => {
+  
+  const [count, setCount] = useState(0);
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    // Dependency Array가 있을 경우 최초 렌더 됐을때만 아래의 'Mount!'가 출력된다. 리렌더X
+    console.log('Mount!');
+  }, []);
+
+  useEffect(() => {
+    // Dependency Array를 전달하지 않을 경우 리렌더링 될 때마다 'Update!'가 출력된다.
+    console.log('Update!');
+  });
+
+  useEffect(() => {
+    // console.log(`count is update : ${count}`);
+    if(count > 5) {
+      alert('count가 5를 넘었습니다. 따라서 1로 초기화 됩니다.');
+      setCount(1);
+    }
+  }, [count]); // Dependency Array의 값이 변경되면 콜백 함수가 수행된다.
+
+  return (
+    <div style={{padding: 20}}>
+      <div>
+        {count}
+        <button onClick={() => {setCount(count + 1)}}>+</button>
+      </div>
+      <div>
+        <input value={text} onChange={e => setText(e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+export default Lifecycle;
+```
+
+```js
+import React, { useEffect, useState } from "react";
+
+// 한 파일당 하나의 컴포넌트만을 고집하지 않아도 된다. 상황에 따라서 판단
+const UnmountTest = () => {
+
+  useEffect(() => {
+    console.log("Mount!");
+
+    // Unmount를 확인하기 위해서는 콜백함수에 함수를 리턴하면 된다.
+    return () => {
+      // Unmount 시점에 실행되게 됨
+      console.log("Unmount!");
+    }
+  }, []);
+
+  return <div>Unmount Testing Component</div>
+}
+
+const Lifecycle = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const toggle = () => setIsVisible(!isVisible);
+
+  return (
+    <div style={{padding: 20}}>
+      <button onClick={toggle}>ON/OFF</button>
+      {isVisible && <UnmountTest/>}
+    </div>
+  );
+}
+
+export default Lifecycle;
 ```
