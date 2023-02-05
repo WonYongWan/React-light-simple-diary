@@ -7,6 +7,8 @@
 [React에서 배열 사용하기 4 - 데이터 수정하기](#react에서-배열-사용하기-4---데이터-수정하기)<br/>
 [React Lifecycle 제어하기 - useEffect](#react-lifecycle-제어하기---useeffect)<br/>
 [React에서 API 호출하기](#react에서-api-호출하기)<br/>
+[React developer tools](#react-developer-tools)<br/>
+[최적화 1 - useMemo](#최적화-1---usememo)<br/>
 
 <br/>
 
@@ -574,4 +576,80 @@ function App() {
   }, []);
 }
 
+```
+
+# React developer tools
+
+구글 웹 스토어에 접속해 react developer tools를 검색한다.
+
+설치 후 사이트 엑세스를 모든 사이트에서, 파일 URL에 대한 엑세스 허용, 시크릿모드에서 허용
+
+react start 후 개발자 도구에서 Components tab에 들어가면 각 컴포넌트마다 어떤 state, props, ref, effect가 있는지 알 수 있다.
+
+Components tab의 톱니바퀴 설정 클릭 후 Highlight updates when components render.에 체크하면 컴포넌트가 리렌더 될 때마다 확인할 수 있다.
+
+# 최적화 1 - useMemo
+
+Memoization이란 이미 계산 본 연산 결과를 기억 해 두었다가
+
+동일한 계산을 시키면, 다시 연산하지 않고 기억 해 두었던 데이터를 반환 시키게 하는 방법
+
+```js
+import { useEffect, useMemo, useRef, useState } from 'react';
+import './App.css';
+import DiaryEditor from './DiaryEditor';
+import DiaryList from './DiaryList';
+
+function App() {
+
+  const [data, setData] = useState([]);
+
+  const dateId = useRef(0);
+
+  const getData = async() => {
+    const res = await fetch('https://jsonplaceholder.typicode.com/comments').then((res) => res.json());
+
+    const initData = res.slice(0, 20).map((it) => {
+      return {
+        author : it.email,
+        content : it.body,
+        emotion : Math.floor(Math.random() * 5) + 1,
+        created_date : new Date().getTime(),
+        id : dateId.current++
+      }
+    });
+
+    setData(initData);
+  }
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  // useMemo를 사용하려면 아래와 같이 useMemo안에 함수를 넣어 사용하면 된다.
+  const getDiaryAnalysis = useMemo (() => {
+      console.log("일기 분석 시작");
+    
+      const goodCount = data.filter((it) => it.emotion >= 3).length;
+      const badCount = data.length - goodCount;
+      const goodRatio = (goodCount / data.length) * 100;
+      return {goodCount, badCount, goodRatio}
+    }, [data.length]); // Dependency Array에 값을 넣고 그 값의 수정이 일어나면 콜백함수가 실행된다.
+
+  // getDiaryAnalysis는 useMemo를 담고 있기 때문에 함수가 아닌 값으로서 동작한다. 
+  const {goodCount, badCount, goodRatio} = getDiaryAnalysis;
+
+  return (
+    <div className="App">
+      <DiaryEditor onCreate={onCreate}/>
+      <div>전체 일기 : {data.length}</div>
+      <div>기분 좋은 일기 개수 : {goodCount}</div>
+      <div>기분 나쁜 일기 개수 : {badCount}</div>
+      <div>기분 좋은 일기 비율 : {goodRatio}</div>
+      <DiaryList onEdit={onEdit} onRemove={onRemove} dairyList={data}/>
+    </div>
+  );
+}
+
+export default App;
 ```
