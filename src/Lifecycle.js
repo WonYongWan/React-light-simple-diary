@@ -1,29 +1,29 @@
-import React, { useEffect, useState } from "react";
+// import React, { useEffect, useState } from "react";
 
-const UnmountTest = () => {
+// const UnmountTest = () => {
 
-  useEffect(() => {
-    console.log("Mount!");
+//   useEffect(() => {
+//     console.log("Mount!");
 
-    return () => {
-      // Unmount 시점에 실행되게 됨
-      console.log("Unmount!")
-    }
-  }, []);
+//     return () => {
+//       // Unmount 시점에 실행되게 됨
+//       console.log("Unmount!")
+//     }
+//   }, []);
 
-  return <div>Unmount Testing Component</div>
-}
+//   return <div>Unmount Testing Component</div>
+// }
 
-const Lifecycle = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const toggle = () => setIsVisible(!isVisible);
+// const Lifecycle = () => {
+//   const [isVisible, setIsVisible] = useState(false);
+//   const toggle = () => setIsVisible(!isVisible);
 
-  return (
-    <div style={{padding: 20}}>
-      <button onClick={toggle}>ON/OFF</button>
-      {isVisible && <UnmountTest/>}
-    </div>
-  );
-}
+//   return (
+//     <div style={{padding: 20}}>
+//       <button onClick={toggle}>ON/OFF</button>
+//       {isVisible && <UnmountTest/>}
+//     </div>
+//   );
+// }
 
-export default Lifecycle;
+// export default Lifecycle;

@@ -6,6 +6,7 @@
 [React에서 배열 사용하기 3 - 데이터 삭제하기](#react에서-배열-사용하기-3---데이터-삭제하기)<br/>
 [React에서 배열 사용하기 4 - 데이터 수정하기](#react에서-배열-사용하기-4---데이터-수정하기)<br/>
 [React Lifecycle 제어하기 - useEffect](#react-lifecycle-제어하기---useeffect)<br/>
+[React에서 API 호출하기](#react에서-api-호출하기)<br/>
 
 <br/>
 
@@ -532,4 +533,45 @@ const Lifecycle = () => {
 }
 
 export default Lifecycle;
+```
+
+# React에서 API 호출하기
+
+```js
+import { useEffect, useRef, useState } from 'react';
+import './App.css';
+
+// https://jsonplaceholder.typicode.com/comments
+
+function App() {
+
+  const [data, setData] = useState([]);
+
+  const dateId = useRef(0);
+
+  // 함수 앞에 async를 붙이면 Pormis객체가 된다.
+  const getData = async() => {
+    // await은 비동기를 동기처럼 만들어 준다. res의 실행이 완료되기 전까지 다음 코드를 실행하지 않는다.
+    const res = await fetch('https://jsonplaceholder.typicode.com/comments').then((res) => res.json());
+
+    const initData = res.slice(0, 20).map((it) => {
+      return {
+        author : it.email,
+        content : it.body,
+        emotion : Math.floor(Math.random() * 5) + 1,
+        created_date : new Date().getTime(),
+        id : dateId.current++
+      }
+    });
+
+    // data의 상태변화
+    setData(initData);
+  }
+
+  // useEffect안에 2번째 파라미터로 빈 배열 []을 기입하면 mount상태에서 실행된다.
+  useEffect(() => {
+    getData();
+  }, []);
+}
+
 ```
