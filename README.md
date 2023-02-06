@@ -9,6 +9,7 @@
 [React에서 API 호출하기](#react에서-api-호출하기)<br/>
 [React developer tools](#react-developer-tools)<br/>
 [최적화 1 - useMemo](#최적화-1---usememo)<br/>
+[최적화 2 - React.memo](#최적화-2---reactmemo)<br/>
 
 <br/>
 
@@ -652,4 +653,108 @@ function App() {
 }
 
 export default App;
+```
+
+# 최적화 2 - React.memo
+
+불필요한 리렌더를 React.memo를 통해 막을 수 있다.
+
+```js
+import React, { useState, useEffect } from "react";
+
+// 아래와 같이 함수를 React.memo 메서드로 감싸주면 text에 변화가 일어나지 않는 이상 리렌더링 하지 않는다.
+const TextView = React.memo(({text}) => {
+  useEffect(() => {
+    console.log(`Update :: Text : ${text}`);
+  });
+  return (
+    <div>{text}</div>
+  );
+});
+
+// 즉 count의 상태가 변화하면 count만 리렌더링, text의 상태가 변화하면 text만 리렌더링 한다.
+const CountView = React.memo(({count}) => {
+  useEffect(() => {
+    console.log(`Update :: Count : ${count}`);
+  });
+  return (
+    <div>{count}</div>
+  );
+});
+
+const OptimizeTest = () => {
+
+  const [count, setCount] = useState(1);
+  const [text, setText] = useState('');
+
+  return (
+    <div style={{padding: 50}}>
+      <div>
+        <h2>count</h2>
+        <CountView count={count} />
+        <button onClick={() => setCount(count+1)}>+</button>
+      </div>
+      <div>
+        <h2>text</h2>
+        <TextView text={text} />
+        <input value={text} onChange={(e) => setText(e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+export default OptimizeTest;
+```
+
+```js
+import React, { useState, useEffect } from "react";
+
+// count는 이전 값과 다음 값의 차이가 생기지 않기 때문에 리렌더링 되지 않는다.
+const CounterA = React.memo(({count}) => {
+  useEffect(() => {
+    console.log(`Counter A update - count: ${count}`);
+  });
+  return <div>{count}</div>
+});
+
+// 객체는 비원시 타입이고 obj의 이전 값과 다음 값은 다른 메모리를 참조하고 있기 때문에 값이 같아도 다르다고 인식해 리렌더링 된다.
+const CounterB = ({obj}) => {
+  useEffect(() => {
+    console.log(`Counter B update - count: ${obj.count}`);
+  });
+  return <div>{obj.count}</div>
+};
+
+// 이전값과 다음값이 같을 경우 true를 다를 경우 false를 반환한다.
+const areEqual = (prevProps, nextProps) => {
+  // return true // 이전 프롭스와 현제 프롭스가 같다 -> 리렌더링을 일으키지 않음
+  // return false // 이전 프롭스와 현제 프롭스가 다르다 -> 리렌터링을 일으킨다.
+  return prevProps.obj.count === nextProps.obj.count;
+}
+
+// React.memo의 두번째 파라미터로 비원시타입의 값을 비교하는 함수를 넣을 수 있다.
+const MemoizedCounterB = React.memo(CounterB, areEqual);
+
+const OptimizeTest = () => {
+
+  const [count, setCount] = useState(1);
+  const [obj, setObj] = useState({count: 1});
+
+  return (
+    <div style={{padding: 50}}>
+      <div>
+        <h2>Counter A</h2>
+        <CounterA count={count} />
+        <button onClick={() => setCount(count)}>A button</button>
+      </div>
+      <div>
+        <h2>Counter B</h2>
+        <MemoizedCounterB obj={obj} />
+        <button onClick={() => setObj({count: obj.count})}>B button</button>
+      </div>
+    </div>
+  );
+}
+
+export default OptimizeTest;
 ```

@@ -52,8 +52,6 @@ function App() {
   }
 
   const getDiaryAnalysis = useMemo (() => {
-      console.log("일기 분석 시작");
-    
       const goodCount = data.filter((it) => it.emotion >= 3).length;
       const badCount = data.length - goodCount;
       const goodRatio = (goodCount / data.length) * 100;
