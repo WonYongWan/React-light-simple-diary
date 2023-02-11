@@ -10,6 +10,8 @@
 [React developer tools](#react-developer-tools)<br/>
 [최적화 1 - useMemo](#최적화-1---usememo)<br/>
 [최적화 2 - React.memo](#최적화-2---reactmemo)<br/>
+[최적화 3 - useCallback](#최적화-3---usecallback)<br/>
+[최적화 4 - 최적화 완성](#최적화-4---최적화-완성)<br/>
 
 <br/>
 
@@ -757,4 +759,112 @@ const OptimizeTest = () => {
 }
 
 export default OptimizeTest;
+```
+
+# 최적화 3 - useCallback
+
+만약 10개가 넘어가는 수 많은 컴포넌트를 useEffect와 console을 찍고 확인하고 다시 지우는 일은 굉장히 번거로운 일이 된다. 그래서 React developer tools를 사용해 최적화할 대상을 찾는다.
+
+```js
+import React, { useEffect, useRef, useState } from "react";
+
+// DiaryEditor을 React.memo로 감싸야 할 경우 감싸야 하는 코드의 길이가 길 경우 감싸는 것은 번거롭다.
+const DiaryEditor = ({onCreate}) => {
+  // 리렌더링 될 때마다 콘솔 호출
+  useEffect(() => {
+    console.log('다이어리 렌더')
+  })
+}
+
+...
+
+// 그래서 반환되는 DiaryEditor를 감싸면 된다.
+export default React.memo(DiaryEditor);
+```
+
+useMemo는 결국 함수를 반환하는 것이 아니라 값(예를 들면 return 1 은 1이라는 값)을 반환하기 때문에 함수의 원본 데이터를 그대로 전달하고 싶을때는 사용하면 안된다.
+
+```js
+// useCallback는 값을 반환하는 것이 아니라 콜백을 반환한다.
+const meoizedCallback = useCallback(
+  () => {
+    doSomething(a, b); //콜백을 반환 **중요한 것은 메모이제이션된 콜백을 반환
+  },
+  [a, b], // 두번째 인자로 전달된 a, b의 값이 변하지 않으면 콜백이 반환되지 않는다.
+);
+```
+
+```js
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import './App.css';
+import DiaryEditor from './DiaryEditor';
+import DiaryList from './DiaryList';
+
+function App() {
+
+  const [data, setData] = useState([]);
+
+  const dateId = useRef(0);
+
+  const getData = async() => {
+    const res = await fetch('https://jsonplaceholder.typicode.com/comments').then((res) => res.json());
+
+    const initData = res.slice(0, 20).map((it) => {
+      return {
+        author : it.email,
+        content : it.body,
+        emotion : Math.floor(Math.random() * 5) + 1,
+        created_date : new Date().getTime(),
+        id : dateId.current++
+      }
+    });
+
+    setData(initData);
+  }
+
+  // 함수형 업데이트를 사용한 사례
+  const onCreate = useCallback((author, content, emotion) => {
+    const created_date = new Date().getTime();
+    const newItem = {
+      author,
+      content,
+      emotion,
+      created_date,
+      id : dateId.current
+    }
+    dateId.current += 1;
+    // 상태변화 함수 setState함수에 함수를 전달하는 것을 함수형 업데이트라고 한다.
+    setData((data) => [newItem, ...data]);
+    // Dependency Array(의존성 배열)를 비워도 항상 최신의 state를 인자를 통해 확인할 수 있다.
+  }, []);
+
+  ...
+}
+
+export default App;
+
+```
+
+# 최적화 4 - 최적화 완성
+
+아이템 하나만 삭제해도 모든 아이템이 리렌더링 되는 현상 최적화(아이템의 개수가 많아지면 문제가 생김)
+
+```js
+// DiaryItem.js
+
+// React.memo사용
+export default React.memo(DiaryItem);
+```
+
+```js
+// App.js
+
+// useCallback사용
+const onRemove = useCallback((targetId) => {
+  setData(data => data.filter(it => it.id !== targetId));
+}, []);
+
+const onEdit = useCallback((targetId, newContent) => {
+  setData(data => data.map(it => it.id === targetId ? {...it, content: newContent} : it));
+}, []);
 ```
