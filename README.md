@@ -12,6 +12,8 @@
 [최적화 2 - React.memo](#최적화-2---reactmemo)<br/>
 [최적화 3 - useCallback](#최적화-3---usecallback)<br/>
 [최적화 4 - 최적화 완성](#최적화-4---최적화-완성)<br/>
+[복잡한 상태 관리 로직 분리하기 - useReducer](#복잡한-상태-관리-로직-분리하기---usereducer)<br/>
+[컴포넌트 트리에 데이터 공급하기 - Context](#컴포넌트-트리에-데이터-공급하기---context)<br/>
 
 <br/>
 
@@ -867,4 +869,204 @@ const onRemove = useCallback((targetId) => {
 const onEdit = useCallback((targetId, newContent) => {
   setData(data => data.map(it => it.id === targetId ? {...it, content: newContent} : it));
 }, []);
+```
+
+# 복잡한 상태 관리 로직 분리하기 - useReducer
+
+useReducer는 컴포넌트에서 상태변화 로직을 분리할 수 있다.
+
+```js
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import './App.css';
+import DiaryEditor from './DiaryEditor';
+import DiaryList from './DiaryList';
+
+// 상태변화에 대한 처리 함수
+// 가장 최신의 state와 action객체를 전달 받는다.
+const reducer = (state, action) => {
+  switch(action.type) {
+    case 'INIT' : {
+      return action.data
+    }
+    case 'CREATE' : {
+      const created_date = new Date().getTime();
+      const newItem = {...action.data, created_date}
+      return [newItem, ...state]
+    }
+    case 'REMOVE' : {
+      return state.filter(it => it.id !== action.targetId);
+    }
+    case 'EDIT' : {
+      return state.map(it => it.id === action.targetId ? {...it, content: action.newContent} : it);
+    }
+    default : 
+    return state;
+  }
+}
+
+function App() {
+  // data는 state다. dispatch는 상태를 변화시키는 action을 발생시키는 함수다.
+  // reducer는 dispatch로 일어난 상태변화를 처리해준다. []는 data의 초기값이다.
+  const [data, dispatch] = useReducer(reducer, []);
+
+  const dateId = useRef(0);
+
+  const getData = async() => {
+    const res = await fetch('https://jsonplaceholder.typicode.com/comments').then((res) => res.json());
+
+    const initData = res.slice(0, 20).map((it) => {
+      return {
+        author : it.email,
+        content : it.body,
+        emotion : Math.floor(Math.random() * 5) + 1,
+        created_date : new Date().getTime(),
+        id : dateId.current++
+      }
+    });
+    // dispatch가 호출되면 action객체 {type:"INIT"}은 reducer로 전달된다.
+    dispatch({type:"INIT", data:initData});
+  }
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const onCreate = useCallback((author, content, emotion) => {
+    dispatch({type:"CREATE", data:{author, content, emotion, id:dateId.current}});
+    dateId.current += 1;
+  }, []);
+
+  const onRemove = useCallback((targetId) => {
+    dispatch({type:"REMOVE", targetId});
+  }, []);
+
+  const onEdit = useCallback((targetId, newContent) => {
+    dispatch({type:"EDIT", targetId, newContent});
+  }, []);
+
+  const getDiaryAnalysis = useMemo (() => {
+      const goodCount = data.filter((it) => it.emotion >= 3).length;
+      const badCount = data.length - goodCount;
+      const goodRatio = (goodCount / data.length) * 100;
+      return {goodCount, badCount, goodRatio}
+    }, [data.length]);
+
+  const {goodCount, badCount, goodRatio} = getDiaryAnalysis;
+
+  return (
+    <div className="App">
+      <DiaryEditor onCreate={onCreate}/>
+      <div>전체 일기 : {data.length}</div>
+      <div>기분 좋은 일기 개수 : {goodCount}</div>
+      <div>기분 나쁜 일기 개수 : {badCount}</div>
+      <div>기분 좋은 일기 비율 : {goodRatio}</div>
+      <DiaryList onEdit={onEdit} onRemove={onRemove} dairyList={data}/>
+    </div>
+  );
+}
+
+export default App;
+```
+
+# 컴포넌트 트리에 데이터 공급하기 - Context
+
+DiaryList컴포넌트에는 diaryList, onRemove(), onEdit()프롭(부모에서 자식으로만 데이터를 전달할 수 있는 단발형 데이터)을 받지만 onRemove(), onEdit()프롭스는 DiaryItem컴포넌트에서 사용하는 프롭들이다. 즉 그냥 거쳐가는 프롭들로 비효율적인 느낌이 든다. 이렇게 거쳐가기만 하는 필요없는 프롭들이 많아지면 곤란한 경우가 생길 수 있고 이런 프롭들을 드릴프롭이라고 부른다.
+
+```js
+// <Provider/>컴포넌트는 바로 자식뿐만 아니라 모든 자식에게 직통으로 데이터를 전달할 수 있다.
+<Provider/>
+```
+
+```js
+// Context 생성
+const MyContext = React.createContext(defaultValue);
+
+// Context Provider를 통한 데이터 공급
+<MyContext.Provider value={전역으로 전달하고자하는 값}>
+  {/*이 Context안에 위치할 자식 컴포넌트들*/}
+</MyContext.Provider>
+```
+
+```js
+// App.js
+// export default된 React는 이름을 변경할 수 있지만 export된 나머지 비구조화할당 {...}는 이름을 변경할 수 없다.
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import './App.css';
+import DiaryEditor from './DiaryEditor';
+import DiaryList from './DiaryList';
+
+// export default는 파일 하나당 1번만 사용할 수 있다.
+// React.createContext를 여러개 선언해도 된다.
+// 선언
+export const DiaryStateContext = React.createContext();
+export const DiaryDispatchContext = React.createContext();
+
+function App() {
+  ...
+  const [data, dispatch] = useReducer(reducer, []);
+  // App컴포넌트가 재생성될때 반환하는 함수들이 재생성되지 않게 하기 위해서 useMemo를 사용했다.
+  const memoizedDispatches = useMemo(() => {
+    return {onCreate, onRemove, onEdit}
+  }, []);
+
+  return (
+    // Provider컴포넌트의 자식으로 있는 모든 컴포넌트는 Provider컴포넌트의 데이터를 전달받을 수 있다.
+    // value prop을 통해 데이터 전달
+    // DiaryStateContext 프롭으로 memoizedDispatches를 같이 전달하게 되면 data가 업데이트 될 때마다 리렌더링이 발생하므로 최적화가 안된다.
+    // 그래서 <DiaryDispatchContext.Provider>를 따로 분리
+    <DiaryStateContext.Provider value={data}>
+      <DiaryDispatchContext.Provider value={memoizedDispatches}>
+        <div className="App">
+          <DiaryEditor/>
+          <div>전체 일기 : {data.length}</div>
+          <div>기분 좋은 일기 개수 : {goodCount}</div>
+          <div>기분 나쁜 일기 개수 : {badCount}</div>
+          <div>기분 좋은 일기 비율 : {goodRatio}</div>
+          <DiaryList/>
+        </div>
+      </DiaryDispatchContext.Provider>
+    </DiaryStateContext.Provider>
+  );
+}
+
+export default App;
+```
+
+```js
+// DiaryEditor.js
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { DiaryDispatchContext } from "./App";
+
+const DiaryEditor = () => {
+
+  // DiaryDispatchContext가 공급하고 있는 값은 onCreate, onRemove, onEdit함수이기 때문에 구조분해할당을 통해 onCreate를 가져와야 한다.
+  const {onCreate} = useContext(DiaryDispatchContext);
+}
+
+export default React.memo(DiaryEditor);
+
+// DiaryItem.js
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { DiaryDispatchContext } from "./App";
+
+const DiaryItem = ({author, content, created_date, emotion, id}) => {
+  // 비구조화 할당을 통해 Provider의 데이터 전달받기
+  const {onRemove, onEdit} = useContext(DiaryDispatchContext);
+}
+
+export default React.memo(DiaryItem);
+
+// DiaryList.js
+import { useContext } from "react";
+import { DiaryStateContext } from "./App";
+import { DiaryDispatchContext } from "./App";
+import DiaryItem from "./DiaryItem";
+
+const DiaryList = () => {
+  const dairyList = useContext(DiaryStateContext);
+  // 비구조화 할당을 통해 Provider의 데이터 전달받기
+  const { onRemove, onEdit } = useContext(DiaryDispatchContext);
+}
+
+export default DiaryList;
 ```

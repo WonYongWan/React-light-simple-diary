@@ -1,6 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { DiaryDispatchContext } from "./App";
 
-const DiaryEditor = ({onCreate}) => {
+const DiaryEditor = () => {
+
+  // DiaryDispatchContext가 공급하고 있는 값은 onCreate, onRemove, onEdit함수이기 때문에 구조분해할당을 통해 onCreate를 가져와야 한다.
+  const {onCreate} = useContext(DiaryDispatchContext);
+
   const authorInput = useRef();
   const contentInput = useRef();
 
